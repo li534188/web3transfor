@@ -1,5 +1,4 @@
 import React, { Provider, useEffect, useState } from 'react';
-import logo from './logo.svg';
 import './App.css';
 import Web3 from 'web3';
 import detectEthereumProvider from '@metamask/detect-provider';
@@ -241,28 +240,8 @@ const useConnectWalletHooks = () => {
 };
 
 const subscribe = (chainId: number, account: string) => {
-  console.log('我已经开始订阅');
   const wsURL = getServe(chainId);
   const web3 = new Web3(wsURL);
-  // var topics = web3.eth.abi.encodeEventSignature({
-  //   name: 'Transfer',
-  //   type: 'event',
-  //   inputs: [
-  //     {
-  //       type: 'address',
-  //       name: 'from',
-  //     },
-  //     {
-  //       type: 'address',
-  //       name: 'to',
-  //     },
-  //     {
-  //       type: 'uint256',
-  //       name: 'value',
-  //     },
-  //   ],
-  // });
-  // console.log('test', topics)
 
   const check = (data: any) => {
     if (data.from === '0xA0859820C02315268D59c4f02f1cb0C335fD67A1') {
@@ -284,7 +263,6 @@ const subscribe = (chainId: number, account: string) => {
   const subscription = web3.eth
     .subscribe('pendingTransactions', function (error, result) {
       if (!error) {
-        // console.log('test', 'result', result);
       } else {
         console.log('test', 'error', error);
       }
