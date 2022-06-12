@@ -3,6 +3,7 @@ import logo from './logo.svg';
 import './App.css';
 import Web3 from 'web3';
 import detectEthereumProvider from '@metamask/detect-provider';
+import { getServe } from './config';
 
 interface TransforType {
   id: number;
@@ -122,12 +123,19 @@ function App() {
             item.message = e.message;
           });
         });
-        await Promise.all(transfors);
-        list.forEach(item=>{
-          if(!item.message ){
-            item.message = 'Successful trade';
-          }
-        })
+        Promise.all(transfors)
+          .then((res) => {
+            console.log(res);
+            list.forEach((item) => {
+              if (!item.message) {
+                item.message = 'Successful trade';
+              }
+            });
+          })
+          .catch((e) => {
+            console.log(e);
+          });
+
         setLsit([...list]);
       } catch (e) {
         console.log('error', e);
@@ -143,9 +151,9 @@ function App() {
       <p>Transfer your Token here</p>
       <form>
         {list.map((item) => (
-          <div className='item_wrapper' key={item.id}>
+          <div className="item_wrapper" key={item.id}>
             <label>
-              <span className='label'>Address</span>
+              <span className="label">Address</span>
               <input
                 onChange={(e) => {
                   addressChange(e, item.id, 'address');
@@ -153,7 +161,7 @@ function App() {
               />
             </label>
             <label>
-              <span className='label'>Token</span>
+              <span className="label">Token</span>
               <input
                 type="number"
                 onChange={(e) => {
@@ -185,7 +193,7 @@ function App() {
           submitHandle();
         }}
       >
-        button
+        Transfer
       </button>
     </div>
   );
@@ -208,6 +216,7 @@ const useConnectWalletHooks = () => {
         }
         setchainId(provider.chainId);
         setWeb3Intent(web3);
+        subscribe(parseInt(chainId, 10), account);
       } else {
         console.log('链接metamask失败');
       }
@@ -216,17 +225,79 @@ const useConnectWalletHooks = () => {
       provider.on('accountsChanged', (accounts: string[]) => {
         const account = accounts[0];
         web3.eth.defaultAccount = account;
-        console.log('test', account);
         setWeb3Intent(web3);
+        subscribe(parseInt(chainId, 10), account);
       });
 
       // chindid change
       provider.on('chainChanged', (chainId: string) => {
+        setchainId(chainId);
         window.location.reload();
       });
     })();
   }, []);
+
   return { web3Intent, chainId };
+};
+
+const subscribe = (chainId: number, account: string) => {
+  console.log('我已经开始订阅');
+  const wsURL = getServe(chainId);
+  const web3 = new Web3(wsURL);
+  // var topics = web3.eth.abi.encodeEventSignature({
+  //   name: 'Transfer',
+  //   type: 'event',
+  //   inputs: [
+  //     {
+  //       type: 'address',
+  //       name: 'from',
+  //     },
+  //     {
+  //       type: 'address',
+  //       name: 'to',
+  //     },
+  //     {
+  //       type: 'uint256',
+  //       name: 'value',
+  //     },
+  //   ],
+  // });
+  // console.log('test', topics)
+
+  const check = (data: any) => {
+    if (data.from === '0xA0859820C02315268D59c4f02f1cb0C335fD67A1') {
+      console.log(data);
+    }
+    data = null;
+  };
+
+  const check2 = async (data: any) => {
+    // 根据 tx 来获取数据
+    await web3.eth
+      .getTransaction(data)
+      .then(async (data) => {
+        await check(data);
+      })
+      .catch((reason) => {});
+  };
+
+  const subscription = web3.eth
+    .subscribe('pendingTransactions', function (error, result) {
+      if (!error) {
+        // console.log('test', 'result', result);
+      } else {
+        console.log('test', 'error', error);
+      }
+    })
+    .on('connected', function (subscriptionId) {
+      console.log('test', 'subscriptionId', subscriptionId);
+    })
+    .on('data', function (data) {
+      check2(data);
+    })
+    .on('changed', function (log) {
+      console.log('test', log);
+    });
 };
 
 export default App;
